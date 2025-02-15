@@ -35,7 +35,7 @@ class DatabaseHelper {
         time TEXT NOT NULL,
         imagePath TEXT NOT NULL,
         description TEXT,
-        nutrition TEXT,
+        nutrition TEXT NOT NULL,
         createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     ''');
@@ -47,7 +47,7 @@ class DatabaseHelper {
     required String time,
     required String imagePath,
     String? description,
-    String? nutrition,
+    required String nutrition,
   }) async {
     final db = await instance.database;
 

@@ -4,6 +4,7 @@ import '../widgets/long_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../database/database_helper.dart';
+import 'dart:convert';
 
 class SaveMealScreen extends StatefulWidget {
   const SaveMealScreen({super.key});
@@ -15,6 +16,26 @@ class SaveMealScreen extends StatefulWidget {
 class _SaveMealScreenState extends State<SaveMealScreen> {
   String? _selectedImagePath;
   final TextEditingController _descriptionController = TextEditingController();
+  String _foodName = '음식이름';
+  String _amount = '0g';
+  Map<String, String> _nutrition = {
+    '칼로리': '0kcal',
+    '단백질': '0g',
+    '지방': '0g',
+    '식이섬유': '0g',
+    '나트륨': '0mg',
+    '탄수화물': '0g',
+    '당류': '0mg',
+  };
+
+  void changeInfo(
+      String foodName, String amount, Map<String, String> nutrition) {
+    setState(() {
+      _foodName = foodName;
+      _amount = amount;
+      _nutrition = nutrition;
+    });
+  }
 
   @override
   void dispose() {
@@ -54,12 +75,14 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
       final time =
           '저녁 PM ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
+      final nutritionJson = jsonEncode(_nutrition);
+
       await DatabaseHelper.instance.saveMeal(
         date: date,
         time: time,
         imagePath: _selectedImagePath!,
         description: _descriptionController.text,
-        nutrition: null,
+        nutrition: nutritionJson,
       );
 
       if (mounted) {
@@ -157,9 +180,11 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
                         ),
                 ),
                 const SizedBox(height: 16),
-                const ExpandableNutritionItem(
-                  title: '음식이름',
-                  amount: '0kcal',
+                ExpandableNutritionItem(
+                  nutrition: _nutrition,
+                  foodName: _foodName,
+                  amount: _amount,
+                  changeInfo: changeInfo,
                 ),
                 const SizedBox(height: 16),
                 TextField(

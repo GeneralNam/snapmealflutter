@@ -10,6 +10,27 @@ class TextInputScreen extends ConsumerStatefulWidget {
 }
 
 class _TextInputScreenState extends ConsumerState<TextInputScreen> {
+  String _foodName = '음식명';
+  String _amount = '0인분';
+  Map<String, String> _nutrition = {
+    '칼로리': '0kcal',
+    '단백질': '0g',
+    '지방': '0g',
+    '식이섬유': '0g',
+    '나트륨': '0mg',
+    '탄수화물': '0g',
+    '당류': '0mg',
+  };
+
+  void _updateNutrition(
+      String foodName, String amount, Map<String, String> nutrition) {
+    setState(() {
+      _foodName = foodName;
+      _amount = amount;
+      _nutrition = nutrition;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,9 +62,11 @@ class _TextInputScreenState extends ConsumerState<TextInputScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const ExpandableNutritionItem(
-                  title: '음식명',
-                  amount: '0인분',
+                ExpandableNutritionItem(
+                  nutrition: _nutrition,
+                  foodName: _foodName,
+                  amount: _amount,
+                  changeInfo: _updateNutrition,
                 ),
                 const SizedBox(height: 16),
                 Container(

@@ -30,11 +30,16 @@ class NutritionItem {
 
 class ExpandableNutritionItem extends StatefulWidget {
   const ExpandableNutritionItem(
-      {super.key, required this.title, required this.amount});
+      {super.key,
+      required this.nutrition,
+      required this.foodName,
+      required this.amount,
+      required this.changeInfo});
 
-  final String title;
+  final Map<String, String> nutrition;
+  final String foodName;
   final String amount;
-
+  final Function(String, String, Map<String, String>) changeInfo;
   @override
   State<ExpandableNutritionItem> createState() =>
       _ExpandableNutritionItemState();
@@ -42,6 +47,31 @@ class ExpandableNutritionItem extends StatefulWidget {
 
 class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
   bool _isExpanded = false;
+  bool _isEditing = true;
+  late TextEditingController _foodNameController;
+  late TextEditingController _amountController;
+  late Map<String, TextEditingController> _nutritionControllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _foodNameController = TextEditingController(text: widget.foodName);
+    _amountController = TextEditingController(text: widget.amount);
+
+    // 각 영양소별 컨트롤러 초기화
+    _nutritionControllers = {
+      for (var entry in widget.nutrition.entries)
+        entry.key: TextEditingController(text: entry.value)
+    };
+  }
+
+  @override
+  void dispose() {
+    _foodNameController.dispose();
+    _amountController.dispose();
+    _nutritionControllers.values.forEach((controller) => controller.dispose());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,18 +90,65 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        widget.title,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        widget.amount,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        if (_isEditing) ...[
+                          Expanded(
+                            child: TextField(
+                              controller: _foodNameController,
+                              decoration: const InputDecoration(
+                                labelText: '음식 이름',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (value) {
+                                widget.changeInfo(
+                                  value,
+                                  _amountController.text,
+                                  widget.nutrition,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          SizedBox(
+                            width: 100,
+                            child: TextField(
+                              controller: _amountController,
+                              decoration: const InputDecoration(
+                                labelText: '양',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (value) {
+                                widget.changeInfo(
+                                  _foodNameController.text,
+                                  value,
+                                  widget.nutrition,
+                                );
+                              },
+                            ),
+                          ),
+                        ] else ...[
+                          Expanded(
+                            child: Text(
+                              widget.foodName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            widget.amount,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                   Icon(
                     _isExpanded ? Icons.keyboard_arrow_up : Icons.chevron_right,
@@ -82,20 +159,73 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
             ),
           ),
           if (_isExpanded) ...[
-            NutritionItem.build(
-                '칼로리', '230kcal', Icons.local_fire_department, Colors.orange),
-            NutritionItem.build('단백질', '50g', Icons.egg_outlined, Colors.red),
-            NutritionItem.build(
-                '지방', '23g', Icons.oil_barrel_outlined, Colors.yellow),
-            NutritionItem.build(
-                '식이섬유', '20g', Icons.eco_outlined, Colors.green),
-            NutritionItem.build(
-                '나트륨', '311mg', Icons.water_drop_outlined, Colors.grey),
-            NutritionItem.build(
-                '탄수화물', '300g', Icons.grain_outlined, Colors.amber),
-            NutritionItem.build(
-                '당류', '232mg', Icons.bubble_chart_outlined, Colors.orange),
+            if (_isEditing) ...[
+              _buildNutritionInput(
+                  '칼로리', Icons.local_fire_department, Colors.orange),
+              _buildNutritionInput('단백질', Icons.egg_outlined, Colors.red),
+              _buildNutritionInput(
+                  '지방', Icons.oil_barrel_outlined, Colors.yellow),
+              _buildNutritionInput('식이섬유', Icons.eco_outlined, Colors.green),
+              _buildNutritionInput(
+                  '나트륨', Icons.water_drop_outlined, Colors.grey),
+              _buildNutritionInput('탄수화물', Icons.grain_outlined, Colors.amber),
+              _buildNutritionInput(
+                  '당류', Icons.bubble_chart_outlined, Colors.orange),
+            ] else ...[
+              NutritionItem.build('칼로리', widget.nutrition['칼로리'] ?? '0',
+                  Icons.local_fire_department, Colors.orange),
+              NutritionItem.build('단백질', widget.nutrition['단백질'] ?? '0',
+                  Icons.egg_outlined, Colors.red),
+              NutritionItem.build('지방', widget.nutrition['지방'] ?? '0',
+                  Icons.oil_barrel_outlined, Colors.yellow),
+              NutritionItem.build('식이섬유', widget.nutrition['식이섬유'] ?? '0',
+                  Icons.eco_outlined, Colors.green),
+              NutritionItem.build('나트륨', widget.nutrition['나트륨'] ?? '0',
+                  Icons.water_drop_outlined, Colors.grey),
+              NutritionItem.build('탄수화물', widget.nutrition['탄수화물'] ?? '0',
+                  Icons.grain_outlined, Colors.amber),
+              NutritionItem.build('당류', widget.nutrition['당류'] ?? '0',
+                  Icons.bubble_chart_outlined, Colors.orange),
+            ],
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNutritionInput(String title, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[300]!),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Text(title),
+          const Spacer(),
+          SizedBox(
+            width: 100,
+            child: TextField(
+              controller: _nutritionControllers[title],
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                final updatedNutrition =
+                    Map<String, String>.from(widget.nutrition);
+                updatedNutrition[title] = value;
+                widget.changeInfo(
+                  _foodNameController.text,
+                  _amountController.text,
+                  updatedNutrition,
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/nutrition_info.dart';
 import '../screens/add_meal_screen.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -74,7 +79,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const NutritionInfoExpanded(),
+                    const ExpandableNutritionItem(
+                      title: '음식명',
+                      amount: '0인분',
+                    ),
                     const SizedBox(height: 24),
                     const Text(
                       '오늘 섭취한 총 영양소',

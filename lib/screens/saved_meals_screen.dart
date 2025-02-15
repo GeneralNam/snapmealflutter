@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../screens/save_meal.dart';
 
 class SavedMealsScreen extends ConsumerWidget {
   const SavedMealsScreen({super.key});
@@ -29,7 +30,7 @@ class SavedMealsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildAddMealCard(),
+              _buildAddMealCard(context),
             ],
           ),
         ),
@@ -37,7 +38,7 @@ class SavedMealsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAddMealCard() {
+  Widget _buildAddMealCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8F2),
@@ -49,7 +50,10 @@ class SavedMealsScreen extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // TODO: 새로운 식사 추가 기능 구현
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SaveMealScreen()),
+            );
           },
           child: Padding(
             padding: const EdgeInsets.all(24.0),

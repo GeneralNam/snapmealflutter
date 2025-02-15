@@ -1,82 +1,13 @@
 import 'package:flutter/material.dart';
 
-class NutritionInfoExpanded extends StatefulWidget {
-  const NutritionInfoExpanded({super.key});
-
-  @override
-  State<NutritionInfoExpanded> createState() => _NutritionInfoExpandedState();
-}
-
-class _NutritionInfoExpandedState extends State<NutritionInfoExpanded> {
-  final List<bool> _isExpanded = [false, false];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildExpandedItem('만두국', '1인분 312g', 0),
-        _buildExpandedItem('김치', '1접시 59g', 1),
-      ],
-    );
-  }
-
-  Widget _buildExpandedItem(String title, String amount, int index) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title),
-              Row(
-                children: [
-                  Text(amount),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _isExpanded[index] = !_isExpanded[index];
-                      });
-                    },
-                    icon: Icon(
-                      _isExpanded[index]
-                          ? Icons.expand_more
-                          : Icons.chevron_right,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (_isExpanded[index]) ...[
-            _buildNutritionItem(
-                '칼로리', '230kcal', Icons.local_fire_department, Colors.orange),
-            _buildNutritionItem('단백질', '50g', Icons.egg_outlined, Colors.red),
-            _buildNutritionItem(
-                '지방', '23g', Icons.oil_barrel_outlined, Colors.yellow),
-            _buildNutritionItem(
-                '식이섬유', '20g', Icons.eco_outlined, Colors.green),
-            _buildNutritionItem(
-                '나트륨', '311mg', Icons.water_drop_outlined, Colors.grey),
-            _buildNutritionItem(
-                '탄수화물', '300g', Icons.grain_outlined, Colors.amber),
-            _buildNutritionItem(
-                '당류', '232mg', Icons.bubble_chart_outlined, Colors.orange),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNutritionItem(
-      String title, String amount, IconData icon, Color color) {
+// 1. 영양소 아이템 빌더
+class NutritionItem {
+  static Widget build(
+    String title,
+    String amount,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
@@ -97,6 +28,81 @@ class _NutritionInfoExpandedState extends State<NutritionInfoExpanded> {
   }
 }
 
+class ExpandableNutritionItem extends StatefulWidget {
+  const ExpandableNutritionItem(
+      {super.key, required this.title, required this.amount});
+
+  final String title;
+  final String amount;
+
+  @override
+  State<ExpandableNutritionItem> createState() =>
+      _ExpandableNutritionItemState();
+}
+
+class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        widget.amount,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  Icon(
+                    _isExpanded ? Icons.keyboard_arrow_up : Icons.chevron_right,
+                    color: Colors.grey,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isExpanded) ...[
+            NutritionItem.build(
+                '칼로리', '230kcal', Icons.local_fire_department, Colors.orange),
+            NutritionItem.build('단백질', '50g', Icons.egg_outlined, Colors.red),
+            NutritionItem.build(
+                '지방', '23g', Icons.oil_barrel_outlined, Colors.yellow),
+            NutritionItem.build(
+                '식이섬유', '20g', Icons.eco_outlined, Colors.green),
+            NutritionItem.build(
+                '나트륨', '311mg', Icons.water_drop_outlined, Colors.grey),
+            NutritionItem.build(
+                '탄수화물', '300g', Icons.grain_outlined, Colors.amber),
+            NutritionItem.build(
+                '당류', '232mg', Icons.bubble_chart_outlined, Colors.orange),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// 3. 그리드 형태의 영양소 정보
 class NutritionInfoGrid extends StatelessWidget {
   const NutritionInfoGrid({super.key});
 
@@ -164,6 +170,7 @@ class NutritionInfoGrid extends StatelessWidget {
   }
 }
 
+// 4. 그리드 아이템
 class NutritionGridItem extends StatelessWidget {
   final IconData icon;
   final String title;

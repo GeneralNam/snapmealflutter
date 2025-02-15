@@ -1,33 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import '../screens/meal_detail_screen.dart';
 import '../screens/saved_meals_screen.dart';
-import '../screens/text_input_screen.dart';
+import '../screens/save_meal.dart';
 
 class AddMealScreen extends ConsumerWidget {
   const AddMealScreen({super.key});
-
-  Future<void> _getImage(BuildContext context, ImageSource source) async {
-    final picker = ImagePicker();
-    try {
-      final XFile? image = await picker.pickImage(source: source);
-      if (context.mounted && image != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MealDetailScreen(imagePath: image.path),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지를 가져오는데 실패했습니다.')),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,20 +20,16 @@ class AddMealScreen extends ConsumerWidget {
             children: [
               _buildAddButton(
                 context,
-                icon: Icons.camera_alt,
-                title: '촬영',
-                subtitle: '카메라로 촬영',
-                color: const Color(0xFFFCF2FF),
-                onTap: () => _getImage(context, ImageSource.camera),
-              ),
-              const SizedBox(height: 16),
-              _buildAddButton(
-                context,
-                icon: Icons.photo_library,
-                title: '갤러리',
-                subtitle: '갤러리에서 찾기',
+                icon: Icons.add_circle_outline,
+                title: '새로운 식사 추가',
+                subtitle: '새로운 식사 기록하기',
                 color: const Color(0xFFF2FFF5),
-                onTap: () => _getImage(context, ImageSource.gallery),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SaveMealScreen(),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               _buildAddButton(
@@ -69,20 +42,6 @@ class AddMealScreen extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SavedMealsScreen(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildAddButton(
-                context,
-                icon: Icons.text_fields,
-                title: '텍스트로 입력',
-                subtitle: '음식 정보를 텍스트로 입력',
-                color: const Color(0xFFF2FBFF),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TextInputScreen(),
                   ),
                 ),
               ),

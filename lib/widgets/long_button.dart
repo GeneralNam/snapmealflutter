@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 
 class LongButton extends StatelessWidget {
-  const LongButton({super.key, required this.text, required this.emoji});
+  const LongButton({
+    super.key,
+    required this.text,
+    required this.emoji,
+    this.onPressed,
+  });
 
   final String text;
   final String emoji;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: onPressed ?? null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFFF8E7),
           padding: const EdgeInsets.symmetric(vertical: 16),

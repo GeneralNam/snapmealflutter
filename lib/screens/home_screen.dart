@@ -210,9 +210,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (mealsInfo.isNotEmpty && isMealDetail) ...[
-                      MealDetailScreen(
-                        mealsInfo: mealsInfo[detailIndex],
+                      ExpandableNutritionItem(
+                        nutrition:
+                            (jsonDecode(mealsInfo[detailIndex]['nutrition'])
+                                    as Map<String, dynamic>)
+                                .map((key, value) =>
+                                    MapEntry(key, value.toString())),
+                        foodName: mealsInfo[detailIndex]['foodName'] ?? '음식이름',
+                        amount: mealsInfo[detailIndex]['amount'] ?? '0g',
                         changeInfo: _updateNutrition,
+                        isEditing: false,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -324,5 +331,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 41),
       ],
     );
+  }
+
+  String _getSuffix(String key) {
+    switch (key) {
+      case '칼로리':
+        return 'kcal';
+      case '나트륨':
+      case '당류':
+        return 'mg';
+      default:
+        return 'g';
+    }
   }
 }

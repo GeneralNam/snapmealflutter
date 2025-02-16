@@ -102,7 +102,12 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
     }
   }
 
-  Future<void> _saveMealWithoutAnalysis() async {
+  String _getFormattedDate() {
+    final now = DateTime.now();
+    return '${now.year}년 ${now.month}월 ${now.day}일';
+  }
+
+  Future<void> _saveMeal() async {
     if (_selectedImagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('사진을 선택해주세요')),
@@ -111,18 +116,23 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
     }
 
     try {
-      final now = DateTime.now();
-      final date = '${now.year}년 ${now.month}월 ${now.day}일';
-
-      final nutritionJson = jsonEncode(_nutrition);
+      // nutrition 데이터 구조 수정
+      final nutritionData = {
+        'foodName': _foodName,
+        'amount': _amount,
+        'nutrition': _controllers.map((key, controller) {
+          String suffix = _getSuffix(key);
+          return MapEntry(key, controller.text + suffix);
+        }),
+      };
 
       await DatabaseHelper.instance.saveMeal(
-        date: date,
+        date: _getFormattedDate(),
         time: _timeController.text,
         type: _selectedType,
         imagePath: _selectedImagePath!,
         description: _descriptionController.text,
-        nutrition: nutritionJson,
+        nutrition: jsonEncode(nutritionData),
       );
 
       if (mounted) {
@@ -263,6 +273,7 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
                   foodName: _foodName,
                   amount: _amount,
                   changeInfo: changeInfo,
+                  isEditing: true,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -288,7 +299,7 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
                 LongButton(
                   text: '분석없이저장',
                   emoji: '🍴',
-                  onPressed: _saveMealWithoutAnalysis,
+                  onPressed: _saveMeal,
                 ),
                 const SizedBox(height: 16),
               ],

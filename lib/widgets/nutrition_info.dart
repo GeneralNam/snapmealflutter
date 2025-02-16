@@ -36,12 +36,14 @@ class ExpandableNutritionItem extends StatefulWidget {
     required this.foodName,
     required this.amount,
     required this.changeInfo,
+    this.isEditing = false,
   });
 
   final Map<String, String> nutrition;
   final String foodName;
   final String amount;
   final Function(String, String, Map<String, String>) changeInfo;
+  final bool isEditing;
   @override
   State<ExpandableNutritionItem> createState() =>
       _ExpandableNutritionItemState();
@@ -49,7 +51,6 @@ class ExpandableNutritionItem extends StatefulWidget {
 
 class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
   bool _isExpanded = false;
-  bool _isEditing = true;
   late TextEditingController _foodNameController;
   late TextEditingController _amountController;
   late Map<String, TextEditingController> _nutritionControllers;
@@ -98,7 +99,7 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
                   Expanded(
                     child: Row(
                       children: [
-                        if (_isEditing) ...[
+                        if (widget.isEditing) ...[
                           Expanded(
                             child: TextField(
                               controller: _foodNameController,
@@ -187,7 +188,7 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
             ),
           ),
           if (_isExpanded) ...[
-            if (_isEditing) ...[
+            if (widget.isEditing) ...[
               _buildNutritionInput(
                   '칼로리', Icons.local_fire_department, Colors.orange),
               _buildNutritionInput('단백질', Icons.egg_outlined, Colors.red),

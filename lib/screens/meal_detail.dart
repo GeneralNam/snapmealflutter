@@ -16,7 +16,12 @@ class MealDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // nutrition JSON 문자열을 Map으로 변환
-    final nutritionData = jsonDecode(mealsInfo['nutrition'] ?? '{}');
+    final Map<String, dynamic> nutritionData =
+        jsonDecode(mealsInfo['nutrition'] ?? '{}');
+
+    // nutrition 데이터에서 각 부분 추출
+    final Map<String, String> formattedNutrition =
+        Map<String, String>.from(nutritionData['nutrition'] ?? {});
 
     return Container(
       child: Column(
@@ -60,10 +65,11 @@ class MealDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ExpandableNutritionItem(
-            nutrition: nutritionData['nutrition'] ?? {},
+            nutrition: formattedNutrition,
             foodName: nutritionData['foodName'] ?? '음식이름',
             amount: nutritionData['amount'] ?? '0g',
             changeInfo: changeInfo,
+            isEditing: false,
           ),
         ],
       ),

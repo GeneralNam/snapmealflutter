@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:snapmealflutter/screens/meal_detail.dart';
 import '../widgets/nutrition_info.dart';
 import '../screens/add_meal_screen.dart';
+import 'package:intl/intl.dart';
+import '../database/database_helper.dart';
+import 'dart:io';
+import 'dart:convert';
+import '../screens/calendar_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -11,8 +17,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  String _foodName = '음식명';
-  String _amount = '0인분';
+  List<Map<String, dynamic>> mealsInfo = [];
+  bool isMealDetail = false;
+  int detailIndex = 0;
+  String _foodName = '음식이름';
+  String _amount = '0g';
   Map<String, String> _nutrition = {
     '칼로리': '0kcal',
     '단백질': '0g',
@@ -22,6 +31,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     '탄수화물': '0g',
     '당류': '0mg',
   };
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodayMeals();
+  }
+
+  Future<void> _loadTodayMeals() async {
+    try {
+      final now = DateTime.now();
+      final date = '${now.year}년 ${now.month}월 ${now.day}일';
+
+      final meals = await DatabaseHelper.instance.getMealsByDate(date);
+      if (mounted) {
+        setState(() {
+          mealsInfo = meals;
+        });
+      }
+    } catch (e) {
+      print('Error loading meals: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('식사 기록을 불러오는데 실패했습니다')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadMealsByDate(DateTime date) async {
+    try {
+      final formattedDate = '${date.year}년 ${date.month}월 ${date.day}일';
+      final meals = await DatabaseHelper.instance.getMealsByDate(formattedDate);
+      if (mounted) {
+        setState(() {
+          mealsInfo = meals;
+        });
+      }
+    } catch (e) {
+      print('Error loading meals: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('식사 기록을 불러오는데 실패했습니다')),
+        );
+      }
+    }
+  }
 
   void _updateNutrition(
       String foodName, String amount, Map<String, String> nutrition) {
@@ -32,22 +88,86 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  Map<String, double> _calculateTotalNutrition() {
+    Map<String, double> totalNutrition = {
+      '칼로리': 0,
+      '단백질': 0,
+      '지방': 0,
+      '식이섬유': 0,
+      '나트륨': 0,
+      '탄수화물': 0,
+      '당류': 0,
+    };
+
+    for (var meal in mealsInfo) {
+      try {
+        final nutrition = jsonDecode(meal['nutrition']) as Map<String, dynamic>;
+
+        nutrition.forEach((key, value) {
+          final numericValue = double.tryParse(
+                  value.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ??
+              0;
+          totalNutrition[key] = (totalNutrition[key] ?? 0) + numericValue;
+        });
+      } catch (e) {
+        print('Error calculating nutrition: $e');
+        print('Problematic meal data: ${meal['nutrition']}');
+      }
+    }
+
+    return totalNutrition;
+  }
+
+  String get formattedDate =>
+      '${_selectedDate.year}년 ${_selectedDate.month}월 ${_selectedDate.day}일';
+
   @override
   Widget build(BuildContext context) {
+    final totalNutrition = _calculateTotalNutrition();
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  '2025년 2월 8일',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      formattedDate,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Text(
+                        '📅',
+                        style: TextStyle(fontSize: 24),
+                      ),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (context) => SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.7,
+                            child: CalendarScreen(
+                              onDateSelected: (selectedDate) {
+                                setState(() {
+                                  _selectedDate = selectedDate;
+                                });
+                                _loadMealsByDate(selectedDate);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               SingleChildScrollView(
@@ -55,14 +175,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Row(
                   children: [
                     const SizedBox(width: 16),
-                    _buildMealItem('아침', '오전 7시 38분'),
-                    const SizedBox(width: 12),
-                    _buildMealItem('점심', '오전 7시 38분'),
-                    const SizedBox(width: 12),
-                    _buildMealItem('저녁', '오전 7시 38분'),
-                    const SizedBox(width: 12),
-                    _buildMealItem('간식', '오전 7시 38분'),
-                    const SizedBox(width: 12),
+                    if (mealsInfo.isNotEmpty) ...[
+                      ...mealsInfo.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final meal = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: InkWell(
+                            onTap: () {
+                              // 이미지 클릭시 상세 정보 표시 또는 수정 페이지로 이동
+                              setState(() {
+                                isMealDetail = true;
+                                detailIndex = index;
+                              });
+                            },
+                            child: _buildMealItem(
+                              meal['type'] ?? '식사이름',
+                              meal['time'] ?? '시간',
+                              meal['imagePath'] ?? '',
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
                     _plusItem(context),
                     const SizedBox(width: 16),
                   ],
@@ -74,38 +209,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.grey[300],
-                        ),
+                    if (mealsInfo.isNotEmpty && isMealDetail) ...[
+                      MealDetailScreen(
+                        mealsInfo: mealsInfo[detailIndex],
+                        changeInfo: _updateNutrition,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      '점심',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text(
-                      '오전 7시 38분',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ExpandableNutritionItem(
-                      nutrition: _nutrition,
-                      foodName: _foodName,
-                      amount: _amount,
-                      changeInfo: _updateNutrition,
-                    ),
+                      const SizedBox(height: 24),
+                    ],
                     const SizedBox(height: 24),
                     const Text(
                       '오늘 섭취한 총 영양소',
@@ -115,7 +225,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const NutritionInfoGrid(),
+                    NutritionInfoGrid(
+                      nutrition: {
+                        '칼로리':
+                            '${totalNutrition['칼로리']?.toStringAsFixed(1)}kcal',
+                        '단백질': '${totalNutrition['단백질']?.toStringAsFixed(1)}g',
+                        '지방': '${totalNutrition['지방']?.toStringAsFixed(1)}g',
+                        '식이섬유':
+                            '${totalNutrition['식이섬유']?.toStringAsFixed(1)}g',
+                        '나트륨': '${totalNutrition['나트륨']?.toStringAsFixed(1)}mg',
+                        '탄수화물':
+                            '${totalNutrition['탄수화물']?.toStringAsFixed(1)}g',
+                        '당류': '${totalNutrition['당류']?.toStringAsFixed(1)}mg',
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -126,18 +249,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildMealItem(String title, String time) {
+  Widget _buildMealItem(String title, String time, String imagePath) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Container(
-            height: 120,
-            width: 120, // 이미지의 가로 크기만 고정
-            color: Colors.grey[300],
-            // 나중에 이미지 추가
-          ),
+          child: imagePath.isNotEmpty
+              ? Image.file(
+                  File(imagePath),
+                  height: 120,
+                  width: 120,
+                  fit: BoxFit.cover,
+                )
+              : Container(
+                  height: 120,
+                  width: 120,
+                  color: Colors.grey[300],
+                ),
         ),
         const SizedBox(height: 4),
         Text(title),
@@ -163,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               MaterialPageRoute(
                 builder: (context) => const AddMealScreen(),
               ),
-            );
+            ).then((_) => _loadTodayMeals());
           },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),

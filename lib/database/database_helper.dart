@@ -33,6 +33,7 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
+        type TEXT NOT NULL,
         imagePath TEXT NOT NULL,
         description TEXT,
         nutrition TEXT NOT NULL,
@@ -45,6 +46,7 @@ class DatabaseHelper {
   Future<int> saveMeal({
     required String date,
     required String time,
+    required String type,
     required String imagePath,
     String? description,
     required String nutrition,
@@ -68,6 +70,7 @@ class DatabaseHelper {
     final data = {
       'date': date,
       'time': time,
+      'type': type,
       'imagePath': localImagePath,
       'description': description,
       'nutrition': nutrition,
@@ -91,5 +94,24 @@ class DatabaseHelper {
       whereArgs: [date],
       orderBy: 'time DESC',
     );
+  }
+
+  // DB 삭제 메서드 추가
+  Future<void> deleteDatabase() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'meals.db');
+
+    // DB 파일 삭제
+    await databaseFactory.deleteDatabase(path);
+
+    // 이미지 파일들도 삭제
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final imageDir = Directory(join(documentsDirectory.path, 'meal_images'));
+    if (await imageDir.exists()) {
+      await imageDir.delete(recursive: true);
+    }
+
+    // database 인스턴스 초기화
+    _database = null;
   }
 }

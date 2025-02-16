@@ -234,7 +234,12 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
 
 // 3. 그리드 형태의 영양소 정보
 class NutritionInfoGrid extends StatelessWidget {
-  const NutritionInfoGrid({super.key});
+  final Map<String, String>? nutrition;
+
+  const NutritionInfoGrid({
+    super.key,
+    this.nutrition,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -251,47 +256,47 @@ class NutritionInfoGrid extends StatelessWidget {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         childAspectRatio: 2.5,
-        children: const [
+        children: [
           NutritionGridItem(
             icon: Icons.local_fire_department,
             title: '칼로리',
-            amount: '480kcal',
+            amount: nutrition?['칼로리'] ?? '0kcal',
             color: Colors.deepOrange,
           ),
           NutritionGridItem(
             icon: Icons.grain_outlined,
             title: '탄수화물',
-            amount: '300g',
+            amount: nutrition?['탄수화물'] ?? '0g',
             color: Colors.amber,
           ),
           NutritionGridItem(
             icon: Icons.egg_outlined,
             title: '단백질',
-            amount: '50g',
+            amount: nutrition?['단백질'] ?? '0g',
             color: Colors.redAccent,
           ),
           NutritionGridItem(
             icon: Icons.oil_barrel_outlined,
             title: '지방',
-            amount: '23g',
+            amount: nutrition?['지방'] ?? '0g',
             color: Colors.yellow,
           ),
           NutritionGridItem(
             icon: Icons.eco_outlined,
             title: '식이섬유',
-            amount: '20g',
+            amount: nutrition?['식이섬유'] ?? '0g',
             color: Colors.green,
           ),
           NutritionGridItem(
             icon: Icons.water_drop_outlined,
             title: '나트륨',
-            amount: '311mg',
+            amount: nutrition?['나트륨'] ?? '0mg',
             color: Colors.blueGrey,
           ),
           NutritionGridItem(
             icon: Icons.bubble_chart_outlined,
             title: '당류',
-            amount: '232mg',
+            amount: nutrition?['당류'] ?? '0mg',
             color: Colors.orange,
           ),
         ],

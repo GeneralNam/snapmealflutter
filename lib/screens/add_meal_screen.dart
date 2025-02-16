@@ -8,9 +8,13 @@ class AddMealScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final time =
+        '${now.hour > 11 ? "PM" : "AM"} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('저녁 PM 06:49'),
+        title: Text(time),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -27,7 +31,7 @@ class AddMealScreen extends ConsumerWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SaveMealScreen(),
+                    builder: (context) => SaveMealScreen(initialTime: time),
                   ),
                 ),
               ),

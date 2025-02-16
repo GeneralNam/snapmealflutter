@@ -16,10 +16,6 @@ class CustomBottomNavigation extends ConsumerWidget {
           label: '홈',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: '캘린더',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.bar_chart),
           label: '통계',
         ),

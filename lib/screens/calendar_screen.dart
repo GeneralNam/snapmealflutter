@@ -4,7 +4,12 @@ import '../widgets/nutrition_info.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
-  const CalendarScreen({super.key});
+  final Function(DateTime) onDateSelected;
+
+  const CalendarScreen({
+    super.key,
+    required this.onDateSelected,
+  });
 
   @override
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
@@ -13,6 +18,75 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  bool _isYearMonthPickerVisible = false;
+
+  void _showYearMonthPicker() {
+    setState(() {
+      _isYearMonthPickerVisible = true;
+    });
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('연도와 월 선택'),
+          content: SizedBox(
+            height: 300,
+            width: 300,
+            child: YearPicker(
+              firstDate: DateTime(2024),
+              lastDate: DateTime(2025),
+              selectedDate: _focusedDay,
+              onChanged: (DateTime dateTime) {
+                setState(() {
+                  _focusedDay = dateTime;
+                  _isYearMonthPickerVisible = false;
+                });
+                Navigator.pop(context);
+
+                // 월 선택 다이얼로그 표시
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('월 선택'),
+                      content: SizedBox(
+                        height: 200,
+                        width: 300,
+                        child: GridView.count(
+                          crossAxisCount: 4,
+                          children: List.generate(12, (index) {
+                            return InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _focusedDay =
+                                      DateTime(_focusedDay.year, index + 1);
+                                });
+                                Navigator.pop(context);
+                              },
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}월',
+                                  style: TextStyle(
+                                    fontWeight: _focusedDay.month == index + 1
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,22 +101,39 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '2025년 2월',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    InkWell(
+                      onTap: _showYearMonthPicker,
+                      child: Text(
+                        '${_focusedDay.year}년 ${_focusedDay.month}월',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Row(
                       children: [
                         IconButton(
                           icon: const Icon(Icons.keyboard_arrow_up),
-                          onPressed: () {},
+                          onPressed: () {
+                            setState(() {
+                              _focusedDay = DateTime(
+                                _focusedDay.year,
+                                _focusedDay.month + 1,
+                              );
+                            });
+                          },
                         ),
                         IconButton(
                           icon: const Icon(Icons.keyboard_arrow_down),
-                          onPressed: () {},
+                          onPressed: () {
+                            setState(() {
+                              _focusedDay = DateTime(
+                                _focusedDay.year,
+                                _focusedDay.month - 1,
+                              );
+                            });
+                          },
                         ),
                       ],
                     ),
@@ -61,6 +152,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     _selectedDay = selectedDay;
                     _focusedDay = focusedDay;
                   });
+                  widget.onDateSelected(selectedDay);
                 },
                 headerVisible: false,
                 daysOfWeekHeight: 30,
@@ -82,31 +174,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 daysOfWeekStyle: const DaysOfWeekStyle(
                   weekdayStyle: TextStyle(color: Colors.black),
                   weekendStyle: TextStyle(color: Colors.red),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '2025년 2월 12일',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '섭취한 총 영양소',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    NutritionInfoGrid(),
-                  ],
                 ),
               ),
             ],

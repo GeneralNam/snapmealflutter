@@ -7,7 +7,9 @@ import '../database/database_helper.dart';
 import 'dart:convert';
 
 class SaveMealScreen extends StatefulWidget {
-  const SaveMealScreen({super.key});
+  final String? initialTime;
+
+  const SaveMealScreen({super.key, this.initialTime});
 
   @override
   State<SaveMealScreen> createState() => _SaveMealScreenState();
@@ -16,6 +18,8 @@ class SaveMealScreen extends StatefulWidget {
 class _SaveMealScreenState extends State<SaveMealScreen> {
   String? _selectedImagePath;
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
+  String _selectedType = '아침';
   String _foodName = '음식이름';
   String _amount = '0g';
   Map<String, String> _nutrition = {
@@ -27,6 +31,12 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
     '탄수화물': '0g',
     '당류': '0mg',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _timeController.text = widget.initialTime ?? '';
+  }
 
   void changeInfo(
       String foodName, String amount, Map<String, String> nutrition) {
@@ -40,6 +50,7 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
   @override
   void dispose() {
     _descriptionController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -72,14 +83,13 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
     try {
       final now = DateTime.now();
       final date = '${now.year}년 ${now.month}월 ${now.day}일';
-      final time =
-          '저녁 PM ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       final nutritionJson = jsonEncode(_nutrition);
 
       await DatabaseHelper.instance.saveMeal(
         date: date,
-        time: time,
+        time: _timeController.text,
+        type: _selectedType,
         imagePath: _selectedImagePath!,
         description: _descriptionController.text,
         nutrition: nutritionJson,
@@ -118,11 +128,49 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  '저녁 PM 06:49',
-                  style: TextStyle(
-                    fontSize: 18,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _timeController,
+                        decoration: InputDecoration(
+                          hintText: '시간 입력',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButton<String>(
+                        value: _selectedType,
+                        underline: Container(),
+                        items:
+                            const ['아침', '점심', '저녁', '간식'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _selectedType = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 AspectRatio(

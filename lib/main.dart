@@ -48,7 +48,6 @@ class MainScreen extends ConsumerWidget {
     final currentIndex = ref.watch(navigationProvider);
     final pages = [
       const HomeScreen(),
-
       const Scaffold(), // 통계 페이지 (아직 미구현)
       const SettingsScreen(),
     ];

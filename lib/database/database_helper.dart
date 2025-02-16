@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:convert';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -38,6 +39,17 @@ class DatabaseHelper {
         description TEXT,
         nutrition TEXT NOT NULL,
         createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
+    // 설정 테이블 추가
+    await db.execute('''
+      CREATE TABLE settings(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        height TEXT NOT NULL,
+        weight TEXT NOT NULL,
+        target_weight TEXT NOT NULL,
+        nutrition_goals TEXT NOT NULL
       )
     ''');
   }
@@ -113,5 +125,52 @@ class DatabaseHelper {
 
     // database 인스턴스 초기화
     _database = null;
+  }
+
+  // 설정 저장
+  Future<void> saveSettings({
+    required String height,
+    required String weight,
+    required String targetWeight,
+    required Map<String, String> nutritionGoals,
+  }) async {
+    final db = await instance.database;
+
+    // 기존 설정 삭제
+    await db.delete('settings');
+
+    // 새 설정 저장
+    await db.insert('settings', {
+      'height': height,
+      'weight': weight,
+      'target_weight': targetWeight,
+      'nutrition_goals': jsonEncode(nutritionGoals),
+    });
+  }
+
+  // 설정 불러오기
+  Future<Map<String, dynamic>> getSettings() async {
+    final db = await instance.database;
+    final List<Map<String, dynamic>> result = await db.query('settings');
+
+    if (result.isEmpty) {
+      // 기본값 반환
+      return {
+        'height': '180',
+        'weight': '83',
+        'target_weight': '90',
+        'nutrition_goals': jsonEncode({
+          '칼로리': '2000kcal',
+          '단백질': '60g',
+          '지방': '50g',
+          '식이섬유': '25g',
+          '나트륨': '2000mg',
+          '탄수화물': '300g',
+          '당류': '25mg',
+        }),
+      };
+    }
+
+    return result.first;
   }
 }

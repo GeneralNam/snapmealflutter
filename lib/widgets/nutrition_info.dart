@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // 1. 영양소 아이템 빌더
 class NutritionItem {
@@ -29,12 +30,13 @@ class NutritionItem {
 }
 
 class ExpandableNutritionItem extends StatefulWidget {
-  const ExpandableNutritionItem(
-      {super.key,
-      required this.nutrition,
-      required this.foodName,
-      required this.amount,
-      required this.changeInfo});
+  const ExpandableNutritionItem({
+    super.key,
+    required this.nutrition,
+    required this.foodName,
+    required this.amount,
+    required this.changeInfo,
+  });
 
   final Map<String, String> nutrition;
   final String foodName;
@@ -56,12 +58,15 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
   void initState() {
     super.initState();
     _foodNameController = TextEditingController(text: widget.foodName);
-    _amountController = TextEditingController(text: widget.amount);
+    _amountController = TextEditingController(
+      text: widget.amount.replaceAll('g', ''),
+    );
 
-    // 각 영양소별 컨트롤러 초기화
     _nutritionControllers = {
       for (var entry in widget.nutrition.entries)
-        entry.key: TextEditingController(text: entry.value)
+        entry.key: TextEditingController(
+          text: entry.value.replaceAll(RegExp(r'[a-zA-Z]'), ''),
+        )
     };
   }
 
@@ -110,22 +115,45 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 8),
                           SizedBox(
-                            width: 100,
-                            child: TextField(
-                              controller: _amountController,
-                              decoration: const InputDecoration(
-                                labelText: '양',
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) {
-                                widget.changeInfo(
-                                  _foodNameController.text,
-                                  value,
-                                  widget.nutrition,
-                                );
-                              },
+                            width: 60,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _amountController,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d*\.?\d*')),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      isDense: true,
+                                      contentPadding:
+                                          EdgeInsets.symmetric(vertical: 8),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    onChanged: (value) {
+                                      widget.changeInfo(
+                                        _foodNameController.text,
+                                        value,
+                                        widget.nutrition,
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'g',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ] else ...[
@@ -207,39 +235,137 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
           const SizedBox(width: 8),
           Text(title),
           const Spacer(),
-          SizedBox(
-            width: 100,
-            child: TextField(
-              controller: _nutritionControllers[title],
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+          Row(
+            children: [
+              SizedBox(
+                width: 80,
+                child: TextField(
+                  controller: _nutritionControllers[title],
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    border: OutlineInputBorder(),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  onChanged: (value) {
+                    final updatedNutrition =
+                        Map<String, String>.from(widget.nutrition);
+                    updatedNutrition[title] = value;
+                    widget.changeInfo(
+                      _foodNameController.text,
+                      _amountController.text,
+                      updatedNutrition,
+                    );
+                  },
+                ),
               ),
-              onChanged: (value) {
-                final updatedNutrition =
-                    Map<String, String>.from(widget.nutrition);
-                updatedNutrition[title] = value;
-                widget.changeInfo(
-                  _foodNameController.text,
-                  _amountController.text,
-                  updatedNutrition,
-                );
-              },
-            ),
+              const SizedBox(width: 4),
+              Text(
+                _getSuffix(title),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+
+  String _getSuffix(String title) {
+    switch (title) {
+      case '칼로리':
+        return 'kcal';
+      case '나트륨':
+      case '당류':
+        return 'mg';
+      default:
+        return 'g';
+    }
+  }
 }
 
-// 3. 그리드 형태의 영양소 정보
-class NutritionInfoGrid extends StatelessWidget {
+class NutritionInfoGrid extends StatefulWidget {
   final Map<String, String>? nutrition;
+  final bool isEditing;
+  final Function(Map<String, String>)? onNutritionChanged;
 
   const NutritionInfoGrid({
     super.key,
     this.nutrition,
+    this.isEditing = false,
+    this.onNutritionChanged,
   });
+
+  @override
+  State<NutritionInfoGrid> createState() => _NutritionInfoGridState();
+}
+
+class _NutritionInfoGridState extends State<NutritionInfoGrid> {
+  late Map<String, TextEditingController> _controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+  }
+
+  // widget.nutrition이 변경될 때 컨트롤러 값 업데이트
+  @override
+  void didUpdateWidget(NutritionInfoGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.nutrition != oldWidget.nutrition) {
+      _controllers['칼로리']?.text =
+          widget.nutrition?['칼로리']?.replaceAll('kcal', '') ?? '0';
+      _controllers['탄수화물']?.text =
+          widget.nutrition?['탄수화물']?.replaceAll('g', '') ?? '0';
+      _controllers['단백질']?.text =
+          widget.nutrition?['단백질']?.replaceAll('g', '') ?? '0';
+      _controllers['지방']?.text =
+          widget.nutrition?['지방']?.replaceAll('g', '') ?? '0';
+      _controllers['식이섬유']?.text =
+          widget.nutrition?['식이섬유']?.replaceAll('g', '') ?? '0';
+      _controllers['나트륨']?.text =
+          widget.nutrition?['나트륨']?.replaceAll('mg', '') ?? '0';
+      _controllers['당류']?.text =
+          widget.nutrition?['당류']?.replaceAll('mg', '') ?? '0';
+    }
+  }
+
+  void _initializeControllers() {
+    _controllers = {
+      '칼로리': TextEditingController(
+          text: widget.nutrition?['칼로리']?.replaceAll('kcal', '') ?? '0'),
+      '탄수화물': TextEditingController(
+          text: widget.nutrition?['탄수화물']?.replaceAll('g', '') ?? '0'),
+      '단백질': TextEditingController(
+          text: widget.nutrition?['단백질']?.replaceAll('g', '') ?? '0'),
+      '지방': TextEditingController(
+          text: widget.nutrition?['지방']?.replaceAll('g', '') ?? '0'),
+      '식이섬유': TextEditingController(
+          text: widget.nutrition?['식이섬유']?.replaceAll('g', '') ?? '0'),
+      '나트륨': TextEditingController(
+          text: widget.nutrition?['나트륨']?.replaceAll('mg', '') ?? '0'),
+      '당류': TextEditingController(
+          text: widget.nutrition?['당류']?.replaceAll('mg', '') ?? '0'),
+    };
+  }
+
+  @override
+  void dispose() {
+    _controllers.values.forEach((controller) => controller.dispose());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,107 +381,164 @@ class NutritionInfoGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 2.5,
+        childAspectRatio: widget.isEditing ? 1.2 : 1.8,
         children: [
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.local_fire_department,
             title: '칼로리',
-            amount: nutrition?['칼로리'] ?? '0kcal',
+            controller: _controllers['칼로리']!,
             color: Colors.deepOrange,
+            suffix: 'kcal',
           ),
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.grain_outlined,
             title: '탄수화물',
-            amount: nutrition?['탄수화물'] ?? '0g',
+            controller: _controllers['탄수화물']!,
             color: Colors.amber,
+            suffix: 'g',
           ),
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.egg_outlined,
             title: '단백질',
-            amount: nutrition?['단백질'] ?? '0g',
+            controller: _controllers['단백질']!,
             color: Colors.redAccent,
+            suffix: 'g',
           ),
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.oil_barrel_outlined,
             title: '지방',
-            amount: nutrition?['지방'] ?? '0g',
+            controller: _controllers['지방']!,
             color: Colors.yellow,
+            suffix: 'g',
           ),
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.eco_outlined,
             title: '식이섬유',
-            amount: nutrition?['식이섬유'] ?? '0g',
+            controller: _controllers['식이섬유']!,
             color: Colors.green,
+            suffix: 'g',
           ),
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.water_drop_outlined,
             title: '나트륨',
-            amount: nutrition?['나트륨'] ?? '0mg',
+            controller: _controllers['나트륨']!,
             color: Colors.blueGrey,
+            suffix: 'mg',
           ),
-          NutritionGridItem(
+          _buildGridItem(
             icon: Icons.bubble_chart_outlined,
             title: '당류',
-            amount: nutrition?['당류'] ?? '0mg',
+            controller: _controllers['당류']!,
             color: Colors.orange,
+            suffix: 'mg',
           ),
         ],
       ),
     );
   }
-}
 
-// 4. 그리드 아이템
-class NutritionGridItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String amount;
-  final Color color;
-
-  const NutritionGridItem({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.amount,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildGridItem({
+    required IconData icon,
+    required String title,
+    required TextEditingController controller,
+    required Color color,
+    required String suffix,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     color: Colors.black54,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+            ],
+          ),
+          if (widget.isEditing) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      border: OutlineInputBorder(),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    onChanged: (value) {
+                      if (widget.onNutritionChanged != null) {
+                        final updatedNutrition = {
+                          for (var entry in _controllers.entries)
+                            entry.key:
+                                '${entry.value.text}${_getSuffix(entry.key)}'
+                        };
+                        widget.onNutritionChanged!(updatedNutrition);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  amount,
+                  suffix,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
                   ),
                 ),
               ],
             ),
-          ),
+          ] else
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${controller.text}$suffix',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  String _getSuffix(String title) {
+    switch (title) {
+      case '칼로리':
+        return 'kcal';
+      case '나트륨':
+      case '당류':
+        return 'mg';
+      default:
+        return 'g';
+    }
   }
 }

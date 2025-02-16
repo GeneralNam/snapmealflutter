@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../database/database_helper.dart';
 import 'dart:convert';
+import 'package:flutter/services.dart';
 
 class SaveMealScreen extends StatefulWidget {
   final String? initialTime;
@@ -31,11 +32,37 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
     '탄수화물': '0g',
     '당류': '0mg',
   };
+  Map<String, TextEditingController> _controllers = {};
 
   @override
   void initState() {
     super.initState();
     _timeController.text = widget.initialTime ?? '';
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
+    _controllers = {
+      '칼로리': TextEditingController(text: '0'),
+      '단백질': TextEditingController(text: '0'),
+      '지방': TextEditingController(text: '0'),
+      '식이섬유': TextEditingController(text: '0'),
+      '나트륨': TextEditingController(text: '0'),
+      '탄수화물': TextEditingController(text: '0'),
+      '당류': TextEditingController(text: '0'),
+    };
+  }
+
+  String _getSuffix(String title) {
+    switch (title) {
+      case '칼로리':
+        return 'kcal';
+      case '나트륨':
+      case '당류':
+        return 'mg';
+      default:
+        return 'g';
+    }
   }
 
   void changeInfo(
@@ -51,6 +78,9 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
   void dispose() {
     _descriptionController.dispose();
     _timeController.dispose();
+    for (var controller in _controllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -314,6 +344,70 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildGridItem({
+    required IconData icon,
+    required String title,
+    required TextEditingController controller,
+    required Color color,
+    required String suffix,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+            ],
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              suffixText: suffix,
+              suffixStyle: const TextStyle(fontSize: 12),
+            ),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            onChanged: (value) {
+              // 숫자만 입력되도록 검증
+              if (value.isNotEmpty) {
+                final numericValue = double.tryParse(value);
+                if (numericValue == null) {
+                  controller.text = '0';
+                  controller.selection = TextSelection.fromPosition(
+                    TextPosition(offset: controller.text.length),
+                  );
+                }
+              }
+            },
+          ),
+        ],
       ),
     );
   }

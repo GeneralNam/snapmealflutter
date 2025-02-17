@@ -6,17 +6,23 @@ import 'dart:io';
 import '../database/database_helper.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SaveMealScreen extends StatefulWidget {
+class SaveMealScreen extends ConsumerStatefulWidget {
   final String? initialTime;
+  final bool showTimeInput;
 
-  const SaveMealScreen({super.key, this.initialTime});
+  const SaveMealScreen({
+    super.key,
+    this.initialTime,
+    this.showTimeInput = false,
+  });
 
   @override
-  State<SaveMealScreen> createState() => _SaveMealScreenState();
+  ConsumerState<SaveMealScreen> createState() => _SaveMealScreenState();
 }
 
-class _SaveMealScreenState extends State<SaveMealScreen> {
+class _SaveMealScreenState extends ConsumerState<SaveMealScreen> {
   String? _selectedImagePath;
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
@@ -156,58 +162,53 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '2025년 2월 8일',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _timeController,
-                        decoration: InputDecoration(
-                          hintText: '시간 입력',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                if (widget.showTimeInput) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _timeController,
+                          decoration: InputDecoration(
+                            hintText: '시간 입력',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[200],
                           ),
-                          filled: true,
-                          fillColor: Colors.grey[200],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButton<String>(
+                          value: _selectedType,
+                          underline: Container(),
+                          items: const ['아침', '점심', '저녁', '간식']
+                              .map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedType = newValue;
+                              });
+                            }
+                          },
+                        ),
                       ),
-                      child: DropdownButton<String>(
-                        value: _selectedType,
-                        underline: Container(),
-                        items:
-                            const ['아침', '점심', '저녁', '간식'].map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _selectedType = newValue;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 24),
                 AspectRatio(
                   aspectRatio: 1,

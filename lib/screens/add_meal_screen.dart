@@ -31,7 +31,10 @@ class AddMealScreen extends ConsumerWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SaveMealScreen(initialTime: time),
+                    builder: (context) => SaveMealScreen(
+                      initialTime: time,
+                      showTimeInput: true,
+                    ),
                   ),
                 ),
               ),

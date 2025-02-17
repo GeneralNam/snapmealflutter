@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../screens/save_meal.dart';
 
+//저장된 식사들 보여주는 위젯젯
 class SavedMealsScreen extends ConsumerWidget {
   const SavedMealsScreen({super.key});
 
@@ -14,13 +15,6 @@ class SavedMealsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '2025년 2월 8일',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               const SizedBox(height: 24),
               const Text(
                 '저장된 식사',
@@ -52,7 +46,11 @@ class SavedMealsScreen extends ConsumerWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SaveMealScreen()),
+              MaterialPageRoute(
+                builder: (context) => const SaveMealScreen(
+                  showTimeInput: false,
+                ),
+              ),
             );
           },
           child: Padding(

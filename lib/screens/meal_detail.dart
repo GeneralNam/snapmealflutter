@@ -15,64 +15,69 @@ class MealDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // nutrition JSON 문자열을 Map으로 변환
     final Map<String, dynamic> nutritionData =
         jsonDecode(mealsInfo['nutrition'] ?? '{}');
 
-    // nutrition 데이터에서 각 부분 추출
     final Map<String, String> formattedNutrition =
         Map<String, String>.from(nutritionData['nutrition'] ?? {});
 
-    return Container(
-      child: Column(
-        children: [
-          ClipRRect(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 이미지 섹션
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: 1,
               child: mealsInfo['imagePath'].isNotEmpty
                   ? Image.file(
                       File(mealsInfo['imagePath']),
-                      width: double.infinity,
                       fit: BoxFit.cover,
                     )
                   : Container(
-                      width: double.infinity,
                       color: Colors.grey[300],
                     ),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(
-                mealsInfo['type'] ?? '식사이름',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+        ),
+        const SizedBox(height: 12),
+        // 식사 정보 섹션
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Text(
+              mealsInfo['type'] ?? '식사이름',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(width: 12),
-              Text(
-                mealsInfo['time'] ?? '시간',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              mealsInfo['time'] ?? '시간',
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ExpandableNutritionItem(
-            nutrition: formattedNutrition,
-            foodName: nutritionData['foodName'] ?? '음식이름',
-            amount: nutritionData['amount'] ?? '0g',
-            changeInfo: changeInfo,
-            isEditing: false,
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        // 영양 정보 섹션
+        ExpandableNutritionItem(
+          nutrition: formattedNutrition,
+          foodName: nutritionData['foodName'] ?? '음식이름',
+          amount: nutritionData['amount'] ?? '0g',
+          changeInfo: changeInfo,
+          isEditing: false,
+        ),
+      ],
     );
   }
 }

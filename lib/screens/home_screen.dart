@@ -220,7 +220,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 24),
                     const Text(
                       '오늘 섭취한 총 영양소',
                       style: TextStyle(

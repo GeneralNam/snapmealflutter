@@ -116,14 +116,10 @@ class _SaveMealScreenState extends State<SaveMealScreen> {
     }
 
     try {
-      // nutrition 데이터 구조 수정
       final nutritionData = {
         'foodName': _foodName,
         'amount': _amount,
-        'nutrition': _controllers.map((key, controller) {
-          String suffix = _getSuffix(key);
-          return MapEntry(key, controller.text + suffix);
-        }),
+        'nutrition': _nutrition,
       };
 
       await DatabaseHelper.instance.saveMeal(

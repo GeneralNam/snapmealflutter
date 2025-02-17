@@ -101,20 +101,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     for (var meal in mealsInfo) {
       try {
-        final nutrition = jsonDecode(meal['nutrition']) as Map<String, dynamic>;
+        final nutritionJson = jsonDecode(meal['nutrition']);
+        final nutritionData =
+            nutritionJson['nutrition'] as Map<String, dynamic>;
 
-        nutrition.forEach((key, value) {
-          final numericValue = double.tryParse(
-                  value.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ??
-              0;
-          totalNutrition[key] = (totalNutrition[key] ?? 0) + numericValue;
+        nutritionData.forEach((key, value) {
+          if (totalNutrition.containsKey(key)) {
+            final numericValue = double.tryParse(
+                  value.toString().replaceAll(RegExp(r'[^0-9.]'), ''),
+                ) ??
+                0;
+            totalNutrition[key] = totalNutrition[key]! + numericValue;
+          }
         });
       } catch (e) {
         print('Error calculating nutrition: $e');
         print('Problematic meal data: ${meal['nutrition']}');
       }
     }
-
     return totalNutrition;
   }
 
@@ -210,16 +214,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (mealsInfo.isNotEmpty && isMealDetail) ...[
-                      ExpandableNutritionItem(
-                        nutrition:
-                            (jsonDecode(mealsInfo[detailIndex]['nutrition'])
-                                    as Map<String, dynamic>)
-                                .map((key, value) =>
-                                    MapEntry(key, value.toString())),
-                        foodName: mealsInfo[detailIndex]['foodName'] ?? '음식이름',
-                        amount: mealsInfo[detailIndex]['amount'] ?? '0g',
+                      MealDetailScreen(
+                        mealsInfo: mealsInfo[detailIndex],
                         changeInfo: _updateNutrition,
-                        isEditing: false,
                       ),
                       const SizedBox(height: 24),
                     ],

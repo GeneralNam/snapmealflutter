@@ -9,6 +9,13 @@ class NutritionItem {
     IconData icon,
     Color color,
   ) {
+    String displayAmount = amount;
+    if (!amount.contains('g') &&
+        !amount.contains('kcal') &&
+        !amount.contains('mg')) {
+      displayAmount = amount + _getSuffix(title);
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
@@ -22,10 +29,22 @@ class NutritionItem {
           const SizedBox(width: 8),
           Text(title),
           const Spacer(),
-          Text(amount),
+          Text(displayAmount),
         ],
       ),
     );
+  }
+
+  static String _getSuffix(String title) {
+    switch (title) {
+      case '칼로리':
+        return 'kcal';
+      case '나트륨':
+      case '당류':
+        return 'mg';
+      default:
+        return 'g';
+    }
   }
 }
 
@@ -169,7 +188,7 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            widget.amount,
+                            widget.amount + 'g',
                             style: const TextStyle(
                               fontSize: 16,
                               color: Colors.grey,

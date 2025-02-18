@@ -23,9 +23,24 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE saved_meals(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          imagePath TEXT NOT NULL,
+          description TEXT,
+          nutrition TEXT NOT NULL,
+          createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      ''');
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -42,7 +57,16 @@ class DatabaseHelper {
       )
     ''');
 
-    // 설정 테이블 추가
+    await db.execute('''
+      CREATE TABLE saved_meals(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        imagePath TEXT NOT NULL,
+        description TEXT,
+        nutrition TEXT NOT NULL,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
     await db.execute('''
       CREATE TABLE settings(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,10 +115,47 @@ class DatabaseHelper {
     return await db.insert('meals', data);
   }
 
+  // 저장된 식사 템플릿 저장
+  Future<int> saveMealTemplate({
+    required String imagePath,
+    String? description,
+    required String nutrition,
+  }) async {
+    final db = await instance.database;
+
+    // 이미지 파일을 앱의 로컬 저장소로 복사
+    final Directory documentsDirectory =
+        await getApplicationDocumentsDirectory();
+    final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final String localImagePath =
+        join(documentsDirectory.path, 'meal_templates', fileName);
+
+    // 이미지 저장 디렉토리 생성
+    await Directory(join(documentsDirectory.path, 'meal_templates'))
+        .create(recursive: true);
+
+    // 이미지 파일 복사
+    await File(imagePath).copy(localImagePath);
+
+    final data = {
+      'imagePath': localImagePath,
+      'description': description,
+      'nutrition': nutrition,
+    };
+
+    return await db.insert('saved_meals', data);
+  }
+
   // 모든 식사 기록 조회
   Future<List<Map<String, dynamic>>> getAllMeals() async {
     final db = await instance.database;
     return await db.query('meals', orderBy: 'createdAt DESC');
+  }
+
+  // 저장된 모든 식사 템플릿 조회
+  Future<List<Map<String, dynamic>>> getAllSavedMeals() async {
+    final db = await instance.database;
+    return await db.query('saved_meals', orderBy: 'createdAt DESC');
   }
 
   // 특정 날짜의 식사 기록 조회
@@ -172,5 +233,34 @@ class DatabaseHelper {
     }
 
     return result.first;
+  }
+
+  // 식사 기록 수정
+  Future<void> updateMeal({
+    required int id,
+    String? description,
+    required String nutrition,
+  }) async {
+    final db = await instance.database;
+
+    await db.update(
+      'meals',
+      {
+        'description': description,
+        'nutrition': nutrition,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // 식사 기록 삭제
+  Future<void> deleteMeal(int id) async {
+    final db = await instance.database;
+    await db.delete(
+      'meals',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

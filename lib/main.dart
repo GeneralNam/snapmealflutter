@@ -8,14 +8,10 @@ import 'providers/navigation_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database/database_helper.dart';
 
-const supabaseUrl = 'https://omjdminkjcpqnqysyztf.supabase.co';
-const supabaseKey = String.fromEnvironment(
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tamRtaW5ramNwcW5xeXN5enRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk2MTI2MDcsImV4cCI6MjA1NTE4ODYwN30.oci1HqvsQ65QLARfK-FUBVHGRFd7YksNk6e9wVYu5cU');
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseHelper.instance.deleteDatabase(); // DB 삭제
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+
   runApp(
     const ProviderScope(
       child: MyApp(),

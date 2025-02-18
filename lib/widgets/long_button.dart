@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
 class LongButton extends StatelessWidget {
-  const LongButton({
-    super.key,
-    required this.text,
-    required this.emoji,
-    this.onPressed,
-  });
-
   final String text;
   final String emoji;
   final VoidCallback? onPressed;
+  final Widget? child;
+
+  const LongButton({
+    Key? key,
+    required this.text,
+    required this.emoji,
+    this.onPressed,
+    this.child,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,26 +27,27 @@ class LongButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+        child: child ??
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  emoji,
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              emoji,
-              style: const TextStyle(
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -75,11 +75,30 @@ class _ExpandableNutritionItemState extends State<ExpandableNutritionItem> {
   late Map<String, TextEditingController> _nutritionControllers;
 
   @override
+  void didUpdateWidget(ExpandableNutritionItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 위젯이 업데이트될 때 컨트롤러 값도 업데이트
+    if (widget.foodName != oldWidget.foodName) {
+      _foodNameController.text = widget.foodName;
+    }
+    if (widget.amount != oldWidget.amount) {
+      _amountController.text =
+          widget.amount.replaceAll(RegExp(r'[a-zA-Z]'), '');
+    }
+    if (widget.nutrition != oldWidget.nutrition) {
+      for (var entry in widget.nutrition.entries) {
+        _nutritionControllers[entry.key]?.text =
+            entry.value.replaceAll(RegExp(r'[a-zA-Z]'), '');
+      }
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _foodNameController = TextEditingController(text: widget.foodName);
     _amountController = TextEditingController(
-      text: widget.amount.replaceAll('g', ''),
+      text: widget.amount.replaceAll(RegExp(r'[a-zA-Z]'), ''),
     );
 
     _nutritionControllers = {

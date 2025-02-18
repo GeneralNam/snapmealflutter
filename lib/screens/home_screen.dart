@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:snapmealflutter/screens/meal_detail.dart';
+import '../screens/meal_detail_screen.dart';
 import '../widgets/nutrition_info.dart';
 import '../screens/add_meal_screen.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +8,7 @@ import '../database/database_helper.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../screens/calendar_screen.dart';
+import '../screens/saved_meals_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -18,8 +19,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Map<String, dynamic>> mealsInfo = [];
-  bool isMealDetail = false;
-  int detailIndex = 0;
   String _foodName = '음식이름';
   String _amount = '0g';
   Map<String, String> _nutrition = {
@@ -187,11 +186,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           padding: const EdgeInsets.only(right: 12),
                           child: InkWell(
                             onTap: () {
-                              // 이미지 클릭시 상세 정보 표시 또는 수정 페이지로 이동
-                              setState(() {
-                                isMealDetail = true;
-                                detailIndex = index;
-                              });
+                              // 이미지 클릭시 MealDetailPage로 이동
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MealDetailScreen(
+                                    meal: meal,
+                                    changeInfo: _updateNutrition,
+                                  ),
+                                ),
+                              );
                             },
                             child: _buildMealItem(
                               meal['type'] ?? '식사이름',
@@ -213,13 +217,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (mealsInfo.isNotEmpty && isMealDetail) ...[
-                      MealDetailScreen(
-                        mealsInfo: mealsInfo[detailIndex],
-                        changeInfo: _updateNutrition,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
                     const Text(
                       '오늘 섭취한 총 영양소',
                       style: TextStyle(

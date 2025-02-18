@@ -7,6 +7,7 @@ import '../database/database_helper.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 class SaveMealScreen extends ConsumerStatefulWidget {
   final String? initialTime;
@@ -39,6 +40,8 @@ class _SaveMealScreenState extends ConsumerState<SaveMealScreen> {
     '당류': '0mg',
   };
   Map<String, TextEditingController> _controllers = {};
+  bool _isAnalyzed = false;
+  bool _isAnalyzing = false;
 
   @override
   void initState() {
@@ -75,8 +78,12 @@ class _SaveMealScreenState extends ConsumerState<SaveMealScreen> {
       String foodName, String amount, Map<String, String> nutrition) {
     setState(() {
       _foodName = foodName;
-      _amount = amount;
+      _amount = amount.contains('g') ? amount : '${amount}g';
       _nutrition = nutrition;
+      print('changeInfo 호출됨:');
+      print('foodName: $_foodName');
+      print('amount: $_amount');
+      print('nutrition: $_nutrition');
     });
   }
 
@@ -128,18 +135,31 @@ class _SaveMealScreenState extends ConsumerState<SaveMealScreen> {
         'nutrition': _nutrition,
       };
 
-      await DatabaseHelper.instance.saveMeal(
-        date: _getFormattedDate(),
-        time: _timeController.text,
-        type: _selectedType,
-        imagePath: _selectedImagePath!,
-        description: _descriptionController.text,
-        nutrition: jsonEncode(nutritionData),
-      );
+      if (widget.showTimeInput) {
+        // 일반 식사 기록 저장
+        await DatabaseHelper.instance.saveMeal(
+          date: _getFormattedDate(),
+          time: _timeController.text,
+          type: _selectedType,
+          imagePath: _selectedImagePath!,
+          description: _descriptionController.text,
+          nutrition: jsonEncode(nutritionData),
+        );
+      } else {
+        // 저장된 식사 템플릿으로 저장
+        await DatabaseHelper.instance.saveMealTemplate(
+          imagePath: _selectedImagePath!,
+          description: _descriptionController.text,
+          nutrition: jsonEncode(nutritionData),
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('식사가 저장되었습니다')),
+          SnackBar(
+            content:
+                Text(widget.showTimeInput ? '식사가 저장되었습니다' : '식사 템플릿이 저장되었습니다'),
+          ),
         );
         Navigator.pop(context);
       }
@@ -148,6 +168,105 @@ class _SaveMealScreenState extends ConsumerState<SaveMealScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('저장에 실패했습니다')),
         );
+      }
+    }
+  }
+
+  Future<void> _analyzeImage() async {
+    if (_selectedImagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 이미지를 선택해주세요')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      var uri = Uri.parse('http://192.168.0.7:8000/analyze-image');
+      var request = http.MultipartRequest('POST', uri);
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'file',
+        _selectedImagePath!,
+      ));
+
+      request.fields['prompt'] = '''이 음식 사진을 분석해서 다음 형식의 JSON으로 응답해주세요:
+{
+  "foodName": "음식이름",
+  "amount": "양(g/ml)",
+  "nutrition": {
+    "칼로리": "0kcal",
+    "단백질": "0g",
+    "지방": "0g",
+    "식이섬유": "0g",
+    "나트륨": "0mg",
+    "탄수화물": "0g",
+    "당류": "0mg"
+  }
+}''';
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        if (data.containsKey('error')) {
+          throw Exception(data['error']);
+        }
+
+        var nutritionData = jsonDecode(data['result']);
+        print('영양정보: $nutritionData'); // 디버깅용
+
+        setState(() {
+          _foodName = nutritionData['foodName'];
+          _amount = nutritionData['amount'];
+          Map<String, dynamic> rawNutrition = nutritionData['nutrition'];
+          _nutrition = {
+            '칼로리': rawNutrition['칼로리'],
+            '단백질': rawNutrition['단백질'],
+            '지방': rawNutrition['지방'],
+            '식이섬유': rawNutrition['식이섬유'],
+            '나트륨': rawNutrition['나트륨'],
+            '탄수화물': rawNutrition['탄수화물'],
+            '당류': rawNutrition['당류'],
+          };
+          _isAnalyzed = true;
+
+          // changeInfo 호출하여 ExpandableNutritionItem 업데이트
+          changeInfo(_foodName, _amount, _nutrition);
+        });
+
+        // 분석 완료 알림
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('분석이 완료되었습니다'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        throw Exception('서버 응답 오류: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Analysis error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('분석 중 오류가 발생했습니다.\n${e.toString()}'),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
       }
     }
   }
@@ -288,17 +407,31 @@ class _SaveMealScreenState extends ConsumerState<SaveMealScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const LongButton(
-                  text: '분석',
-                  emoji: '😋',
-                ),
-                const SizedBox(height: 16),
-                LongButton(
-                  text: '분석없이저장',
-                  emoji: '🍴',
-                  onPressed: _saveMeal,
-                ),
-                const SizedBox(height: 16),
+                _isAnalyzed
+                    ? LongButton(
+                        text: '저장',
+                        emoji: '💾',
+                        onPressed: _saveMeal,
+                      )
+                    : Column(
+                        children: [
+                          LongButton(
+                            text: '분석',
+                            emoji: '😋',
+                            onPressed: _isAnalyzing ? null : _analyzeImage,
+                            child: _isAnalyzing
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white)
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          LongButton(
+                            text: '분석없이저장',
+                            emoji: '🍴',
+                            onPressed: _saveMeal,
+                          ),
+                        ],
+                      ),
               ],
             ),
           ),

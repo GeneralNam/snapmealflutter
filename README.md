@@ -1,6 +1,6 @@
 # SnapMeal
 
-**OpenAI API를 이용한 사용자의 식단 분석 앱.**
+**OpenAI API를 이용한 사용자의 식단 기록 앱.**
 
 ---
 

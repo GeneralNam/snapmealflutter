@@ -5,19 +5,19 @@
 ---
 
 ## 1. 메인 페이지  
-<img src="apppics/mainpage.png" width="400">
+<img src="apppics/mainpage.png" width="200">
 
 - 스크롤을 통해 오늘 먹은 식사들을 볼 수 있음.
 - 특정 식사를 누르면 해당 식사의 상세 정보를 확인 가능.
 - 추가 버튼을 누르면 새로운 식사 추가 페이지로 이동.
 - 오늘 섭취한 총 영양소 정보 표시.
 - 달력 이모지를 눌러서 이전에 먹은 식사를 열람 가능.  
-  <img src="apppics/calendar.png" width="400">
+  <img src="apppics/calendar.png" width="200">
 
 ---
 
 ## 2. 상세 정보 페이지  
-<img src="apppics/detailpage.png" width="400">
+<img src="apppics/detailpage.png" width="200">
 
 - 해당 식사의 사진, 식사 종류, 시간, 메뉴, 영양 성분을 열람 가능.
 - 상단의 수정 및 삭제 버튼 제공.
@@ -25,7 +25,7 @@
 ---
 
 ## 3. 새로운 식사 추가 페이지  
-<img src="apppics/newmeal.png" width="400">
+<img src="apppics/addmeal.png" width="200">
 
 - 촬영 또는 갤러리를 통해 사진 업로드 가능.
 - 미리 저장해놓은 식사 템플릿을 활용한 업로드 가능.
@@ -33,21 +33,21 @@
 ---
 
 ## 4. 저장해놓은 식사 템플릿  
-<img src="apppics/savedmeal.png" width="400">
+<img src="apppics/savedmeal.png" width="200">
 
 - 자주 먹는 식사들은 템플릿으로 저장하여 쉽게 업로드 가능.
 
 ---
 
 ## 5. 사진 업로드 페이지  
-<img src="apppics/pic.png" width="400">
+<img src="apppics/pic.png" width="200">
 
 - 올바른 사진인지 확인하고 분석을 맡길 수 있는 페이지.
 
 ---
 
 ## 6. 식사 업로드 페이지  
-<img src="apppics/picadd.png" width="400">
+<img src="apppics/picadd.png" width="200">
 
 - 올바르게 분석되었는지 확인.
 - 시간 및 식사 종류 확인 및 수정 가능.
@@ -57,7 +57,7 @@
 ---
 
 ## 7. 설정 페이지  
-<img src="apppics/config.png" width="400">
+<img src="apppics/config.png" width="200">
 
 - 키, 몸무게, 희망 몸무게 설정 가능.
 - 하루 섭취 영양 성분 목표 설정 가능.
